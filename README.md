@@ -37,7 +37,7 @@ Packages are installed automatically by the scripts when needed.
 
 ## How to run
 
-### Option A — RStudio (recommended)
+### RStudio (recommended)
 1. Open RStudio
 2. Set your working directory to the project folder (`Econometrics_Project/`)
 3. Run:
@@ -46,8 +46,9 @@ Packages are installed automatically by the scripts when needed.
 setwd("Econometrics_Project")
 source("run_all.R")
 ```
+or
 
-### Option B — Terminal
+### Terminal
 From the repository root:
 
 ```bash
