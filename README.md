@@ -5,12 +5,6 @@ This repo is the **Part 1 (baseline)** of my econometrics project testing Solow-
 - Higher **savings rate** is associated with higher **GDP per capita**.
 - Higher **population growth** is associated with lower **GDP per capita**.
 
-**What makes this repo “RA-friendly”**
-- End-to-end pipeline: download → clean/filter → impute → estimate → export tables/figures → render report.
-- Explicit, reproducible sample rules (1982–2019; drop extremely sparse countries).
-- Multiple imputation with transparent settings.
-- Robustness: complete-case vs MI, and robust (HC3) SEs for complete-case.
-
 ## Data
 Data are pulled from the **World Bank** API via the `WDI` R package (no manual Excel downloads needed).
 
