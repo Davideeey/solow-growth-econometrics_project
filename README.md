@@ -1,43 +1,82 @@
-# Solow Growth Model (Part 1) — Reproducible Econometrics in R
+# Solow Growth Econometrics (Part 1)
 
-This repo is the **Part 1 (baseline)** of my econometrics project testing Solow-style predictions using World Bank data:
+Reproducible econometrics project testing Solow-style predictions using World Bank data:
 
-- Higher **savings rate** is associated with higher **GDP per capita**.
-- Higher **population growth** is associated with lower **GDP per capita**.
+- Higher savings (investment) is associated with higher GDP per capita.
+- Higher population-growth term is associated with lower GDP per capita.
 
-## Data
-Data are pulled from the **World Bank** API via the `WDI` R package (no manual Excel downloads needed).
+Part 1 uses a pooled log-log specification, multiple imputation for missing values, and a complete-case robustness check with HC3 robust standard errors.
 
-Indicators (codes):
-- GDP per capita (current US$): `NY.GDP.PCAP.CD`
-- Gross domestic savings (% of GDP): `NY.GDS.TOTL.ZS`
-- Population growth (annual %): `SP.POP.GROW`
+---
 
-Sample period: **1982–2019**.
+## Repository structure
 
-## Model (Part 1)
-We estimate (log-log form):
+Project files are inside the folder:
 
-\[ \log y_{it} = \alpha + \beta \log s_{it} + \gamma \log(n_{it}+g+\delta) + \varepsilon_{it} \]
+- `Econometrics_Project/`
 
-Implementation detail:
-- savings rate is converted from % to share: `s = savings_rate/100`
-- population growth is converted from % to decimal: `n = pop_growth/100`
-- we set `g + δ = 0.05` (configurable) and use `log(n + g + δ)` so we **do not need to drop negative population growth years**.
+Main contents (inside that folder):
+
+- `run_all.R` — runs the full pipeline
+- `src/` — scripts (download, clean, impute, estimate, render report)
+- `report/` — R Markdown report and rendered HTML
+- `results/`
+  - `results/tables/` — exported regression tables (CSV)
+  - `results/figures/` — exported figures (PNG)
+
+---
+
+## Requirements
+
+- R
+- RStudio (recommended)
+
+Packages are installed automatically by the scripts when needed.
+
+---
 
 ## How to run
-In R from the repo root:
+
+### Option A — RStudio (recommended)
+1. Open RStudio
+2. Set your working directory to the project folder (`Econometrics_Project/`)
+3. Run:
 
 ```r
+setwd("Econometrics_Project")
 source("run_all.R")
 ```
 
-Outputs:
-- Tables: `results/tables/`
-- Figures: `results/figures/`
-- Report: `report/solow_part1.html`
+### Option B — Terminal
+From the repository root:
 
-## Roadmap (Part 2)
-- Panel estimators (country FE + year FE)
-- Country-clustered SEs
-- Additional sensitivity checks (PPP GDPpc, winsorization, subperiod stability)
+```bash
+Rscript Econometrics_Project/run_all.R
+```
+
+---
+
+## Output files
+
+After running, you should get:
+
+- Report:
+  - `Econometrics_Project/report/solow_part1.html`
+- Tables:
+  - `Econometrics_Project/results/tables/mi_main.csv`
+  - `Econometrics_Project/results/tables/complete_case_hc3.csv`
+- Figure:
+  - `Econometrics_Project/results/figures/resid_vs_fitted.png`
+
+---
+
+## Data source
+
+Data are downloaded automatically from the World Bank API during execution (no manual download needed).
+
+---
+
+## Notes
+
+- Results in Part 1 are associations from a pooled specification.
+- Part 2 (planned): panel structure (country/year fixed effects), clustered standard errors, additional robustness checks.
