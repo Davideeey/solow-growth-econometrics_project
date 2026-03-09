@@ -1,0 +1,163 @@
+---
+title: "Solow Growth Model (Part 1) — Reproducible Econometrics"
+author: "Davide Yang"
+output:
+  html_document:
+    theme: readable
+    toc: true
+    toc_depth: 2
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+
+suppressPackageStartupMessages({
+  library(readr)
+  library(dplyr)
+  library(knitr)
+})
+
+# Helpers for nicer tables
+fmt_num <- function(x, digits = 3) round(x, digits)
+fmt_p <- function(p) {
+  ifelse(is.na(p), NA,
+         ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+}
+
+# Path helper so the report works whether it is knitted from:
+# - the project root, or
+# - inside the /report folder.
+# Usage: p <- rel_path("results/tables/mi_main.csv")
+rel_path <- function(p) {
+  if (file.exists(p)) return(p)
+  alt <- file.path("..", p)
+  if (file.exists(alt)) return(alt)
+  return(p) # fallback (will error clearly if missing)
+}
+```
+
+## Research question
+
+This report tests the qualitative Solow-style predictions using World Bank data:
+
+- Higher savings (investment) should be associated with higher GDP per capita.
+- Higher population-growth term should be associated with lower GDP per capita.
+
+**Model (Part 1):**
+
+\[
+\log(y_{it}) = \alpha + \beta_1 \log(s_{it}) + \beta_2 \log(n_{it} + g + \delta) + \varepsilon_{it}
+\]
+
+where we set \(g+\delta = 0.05\). This avoids dropping observations simply because population growth is negative.
+
+## Data and sample
+
+- Source: World Bank (downloadable automatically via script).
+- Sample window: 1982–2019.
+- Extremely sparse countries are excluded (high missingness in key variables).
+
+Missing values are handled using **multiple imputation (mice)**. Results are compared to a **complete-case** regression with **HC3 robust standard errors**.
+
+## Results
+
+### Main (Multiple Imputation pooled)
+
+```{r}
+mi <- read_csv(rel_path("results/tables/mi_main.csv"), show_col_types = FALSE)
+
+mi_out <- mi %>%
+  transmute(
+    term,
+    estimate  = fmt_num(estimate),
+    std_error = fmt_num(std.error),
+    statistic = fmt_num(statistic),
+    df        = fmt_num(df),
+    p_value   = fmt_p(p.value),
+    ci_low    = fmt_num(`2.5 %`),
+    ci_high   = fmt_num(`97.5 %`)
+  )
+
+kable(
+  mi_out,
+  caption = "Main regression (MI pooled). Log-log coefficients can be read as elasticities."
+)
+```
+
+**Interpretation (elasticities):**
+
+```{r}
+b_s   <- mi$estimate[mi$term == "log_s"]
+b_ngd <- mi$estimate[mi$term == "log_ngd"]
+
+cat(paste0(
+  "- `log_s` is positive: a 1% increase in savings is associated with about ",
+  fmt_num(b_s, 3), "% higher GDP per capita (holding the population-growth term fixed).\n",
+  "- `log_ngd` is negative: a 1% increase in (n+g+δ) is associated with about ",
+  fmt_num(b_ngd, 3), "% lower GDP per capita (holding savings fixed).\n"
+))
+```
+
+Because this is a pooled specification, these should be treated as **associations** (so not actual causal effects).
+
+### Robustness (Complete-case + HC3)
+
+```{r}
+cc <- read_csv(rel_path("results/tables/complete_case_hc3.csv"), show_col_types = FALSE)
+
+cc_out <- cc %>%
+  transmute(
+    term,
+    estimate  = fmt_num(estimate),
+    std_error = fmt_num(std_error),
+    statistic = fmt_num(statistic),
+    p_value   = fmt_p(p_value)
+  )
+
+kable(
+  cc_out,
+  caption = "Robustness: complete-case OLS with HC3 robust standard errors."
+)
+```
+
+The signs and magnitudes are broadly consistent across MI and complete-case, which supports the stability of our main qualitative conclusion.
+
+## Diagnostics
+
+```{r, out.width="85%"}
+# IMPORTANT: Use an ABSOLUTE path so Pandoc can always find the image
+# even when the HTML is created inside the /report folder.
+img_rel <- rel_path("results/figures/resid_vs_fitted.png")
+img_abs <- normalizePath(img_rel, winslash = "/", mustWork = TRUE)
+
+knitr::include_graphics(img_abs)
+```
+
+- Residuals are mostly centered around zero.
+- Outliers exist (expected in cross-country macro data).
+- Heteroskedasticity is plausible → reporting **robust SE** is appropriate (as done above).
+
+## Conclusion (Part 1)
+
+**Main conclusion:** The data support the standard Solow-style qualitative predictions:
+
+- Savings ↗ GDP per capita.
+
+- Population-growth term ↘ GDP per capita.
+
+**what's done in Part 1:**
+
+- Fully reproducible pipeline (download → clean → impute → estimate → export).
+
+- MI results + complete-case robust-SE check.
+
+## Notes / limitations (what will be in Part 2)
+
+- Panel structure is not yet modeled (country FE / year FE planned).
+- Clustered standard errors by country planned.
+- More robustness planned (PPP GDPpc outcome, subperiods, winsorization/outlier robustness).
